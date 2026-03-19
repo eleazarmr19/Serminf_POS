@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Serminf POS PRO</title>
+<title>Serminf POS</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
@@ -18,7 +18,7 @@ body{background:#f4f6f9;}
 <body>
 
 <div class="sidebar">
-<h4>POS PRO</h4>
+<h4>POS</h4>
 <button class="btn btn-outline-light w-100 mb-2" onclick="showView('ventas')">Ventas</button>
 <button class="btn btn-outline-light w-100 mb-2" onclick="showView('productos')">Productos</button>
 <button class="btn btn-outline-light w-100 mb-2" onclick="showView('historial')">Historial</button>
@@ -32,8 +32,12 @@ body{background:#f4f6f9;}
 <div id="ventasView">
 <input id="search" class="form-control mb-2" placeholder="Buscar..." onkeyup="renderProducts()">
 <input id="barcode" class="form-control mb-3" placeholder="Código barras" onkeyup="scanBarcode(event)">
+
 <div class="row">
-<div class="col-md-8"><div class="row" id="products"></div></div>
+<div class="col-md-8">
+<div class="row" id="products"></div>
+</div>
+
 <div class="col-md-4">
 <div class="card p-3">
 <h5>Ticket</h5>
@@ -69,7 +73,7 @@ body{background:#f4f6f9;}
 </div>
 
 <!-- MODAL -->
-<div id="modal" style="display:none;position:fixed;top:20%;left:50%;transform:translateX(-50%);background:#fff;padding:20px;">
+<div id="modal" style="display:none;position:fixed;top:20%;left:50%;transform:translateX(-50%);background:#fff;padding:20px;border-radius:10px;">
 <input type="hidden" id="editIndex">
 <input id="name" class="form-control mb-2" placeholder="Nombre">
 <input id="category" class="form-control mb-2" placeholder="Categoría">
@@ -81,202 +85,232 @@ body{background:#f4f6f9;}
 </div>
 
 <script>
-let db, dbReady=false;
-let products=[], sales=[], cart=[];
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let sales = JSON.parse(localStorage.getItem("sales")) || [];
+let cart = [];
 
-// DB
-let req=indexedDB.open("posDB",1);
-req.onupgradeneeded=e=>{
- db=e.target.result;
- db.createObjectStore("products",{keyPath:"id"});
- db.createObjectStore("sales",{keyPath:"id"});
-};
-req.onsuccess=e=>{db=e.target.result;dbReady=true;loadData();};
-
-function save(store,data){
- let tx=db.transaction(store,"readwrite");
- let s=tx.objectStore(store);
- data.forEach(d=>s.put(d));
+// ===== SAVE =====
+function saveData(){
+ localStorage.setItem("products", JSON.stringify(products));
+ localStorage.setItem("sales", JSON.stringify(sales));
 }
 
-// VISTAS
+// ===== VIEWS =====
 function showView(v){
  ventasView.style.display="none";
  productosView.style.display="none";
  historialView.style.display="none";
  corteView.style.display="none";
  document.getElementById(v+"View").style.display="block";
- if(v==="historial")renderSales();
- if(v==="corte")renderCorte();
+
+ if(v==="historial") renderSales();
+ if(v==="corte") renderCorte();
 }
 
-// PRODUCTOS
+// ===== PRODUCTOS =====
 function renderProducts(){
- let s=search.value.toLowerCase();
- productsDiv=document.getElementById("products");
- productsDiv.innerHTML="";
+ let s = search.value.toLowerCase();
+ let cont = document.getElementById("products");
+ cont.innerHTML = "";
+
  products.filter(p=>p.name.toLowerCase().includes(s)).forEach((p,i)=>{
-  productsDiv.innerHTML+=`
+  cont.innerHTML += `
   <div class="col-md-4 mb-2">
    <div class="card p-2 product" onclick="addToCart(${i})">
     <b>${p.name}</b><br>
-    Stock: ${p.stock}<br>$${p.price}
+    Stock: ${p.stock}<br>
+    $${p.price}
    </div>
   </div>`;
  });
 }
 
 function renderTable(){
- let t=document.getElementById("productTable");
- t.innerHTML="";
+ let t = document.getElementById("productTable");
+ t.innerHTML = "";
+
  products.forEach((p,i)=>{
-  t.innerHTML+=`<tr>
-  <td>${p.name}</td>
-  <td>${p.category}</td>
-  <td>${p.price}</td>
-  <td>${p.stock}</td>
-  <td>${p.code}</td>
-  <td>
-  <button onclick="editProduct(${i})">✏️</button>
-  <button onclick="deleteProduct(${i})">❌</button>
-  </td></tr>`;
+  t.innerHTML += `
+  <tr>
+   <td>${p.name}</td>
+   <td>${p.category}</td>
+   <td>${p.price}</td>
+   <td>${p.stock}</td>
+   <td>${p.code}</td>
+   <td>
+    <button onclick="editProduct(${i})">✏️</button>
+    <button onclick="deleteProduct(${i})">❌</button>
+   </td>
+  </tr>`;
  });
 }
 
 function saveProduct(){
- let i=editIndex.value;
- let obj={
-  id:i?products[i].id:Date.now(),
-  name:name.value,
-  category:category.value,
-  price:+price.value,
-  stock:+stock.value,
-  code:code.value
+ let i = editIndex.value;
+
+ let obj = {
+  id: i ? products[i].id : Date.now(),
+  name: name.value,
+  category: category.value,
+  price: +price.value,
+  stock: +stock.value,
+  code: code.value
  };
- if(i==="")products.push(obj); else products[i]=obj;
- save("products",products);
- closeModal();renderProducts();renderTable();
+
+ if(i==="") products.push(obj);
+ else products[i] = obj;
+
+ saveData();
+ closeModal();
+ renderProducts();
+ renderTable();
 }
 
 function deleteProduct(i){
  products.splice(i,1);
- save("products",products);
- renderProducts();renderTable();
+ saveData();
+ renderProducts();
+ renderTable();
 }
 
 function editProduct(i){
  openModal();
- name.value=products[i].name;
- category.value=products[i].category;
- price.value=products[i].price;
- stock.value=products[i].stock;
- code.value=products[i].code;
- editIndex.value=i;
+ name.value = products[i].name;
+ category.value = products[i].category;
+ price.value = products[i].price;
+ stock.value = products[i].stock;
+ code.value = products[i].code;
+ editIndex.value = i;
 }
 
-// MODAL
-function openModal(){modal.style.display="block";}
-function closeModal(){modal.style.display="none";clearForm();}
-function clearForm(){name.value="";category.value="";price.value="";stock.value="";code.value="";editIndex.value="";}
+// ===== MODAL =====
+function openModal(){ modal.style.display="block"; }
+function closeModal(){ modal.style.display="none"; clearForm(); }
 
-// CARRITO
+function clearForm(){
+ name.value=""; category.value=""; price.value=""; stock.value=""; code.value=""; editIndex.value="";
+}
+
+// ===== CARRITO =====
 function addToCart(i){
- if(products[i].stock<=0)return alert("Sin stock");
- cart.push(products[i]);renderCart();
+ if(products[i].stock<=0) return alert("Sin stock");
+ cart.push(products[i]);
+ renderCart();
 }
-function removeFromCart(i){cart.splice(i,1);renderCart();}
+
+function removeFromCart(i){
+ cart.splice(i,1);
+ renderCart();
+}
 
 function renderCart(){
- let l=cart.innerHTML="";let t=0;
- let ul=document.getElementById("cart");ul.innerHTML="";
+ let l = document.getElementById("cart");
+ l.innerHTML = "";
+ let t = 0;
+
  cart.forEach((p,i)=>{
-  t+=p.price;
-  ul.innerHTML+=`<li class="list-group-item d-flex justify-content-between">
-  ${p.name} $${p.price}
-  <button onclick="removeFromCart(${i})">❌</button></li>`;
+  t += p.price;
+  l.innerHTML += `
+  <li class="list-group-item d-flex justify-content-between">
+   ${p.name} $${p.price}
+   <button class="btn btn-danger btn-sm" onclick="removeFromCart(${i})">X</button>
+  </li>`;
  });
- total.innerText=t;
+
+ total.innerText = t;
 }
 
-// VENTAS
+// ===== VENTAS =====
 function checkout(){
- if(!cart.length)return;
- let totalVal=+total.innerText;
+ if(!cart.length) return alert("Carrito vacío");
+
+ let totalVal = +total.innerText;
 
  cart.forEach(item=>{
-  let p=products.find(x=>x.id===item.id);
+  let p = products.find(x=>x.id===item.id);
   p.stock--;
  });
 
- let sale={id:Date.now(),date:new Date().toLocaleString(),items:[...cart],total:totalVal};
- sales.push(sale);
+ sales.push({
+  id: Date.now(),
+  date: new Date().toLocaleString(),
+  items: [...cart],
+  total: totalVal
+ });
 
- save("products",products);
- save("sales",sales);
+ saveData();
 
- cart=[];renderCart();renderProducts();renderTable();
+ cart = [];
+ renderCart();
+ renderProducts();
+ renderTable();
+
  alert("Venta guardada");
 }
 
-// HISTORIAL
+// ===== HISTORIAL =====
 function renderSales(){
- salesList.innerHTML="";
- sales.forEach(s=>salesList.innerHTML+=`<li class="list-group-item">${s.date} - $${s.total}</li>`);
+ let l = document.getElementById("salesList");
+ l.innerHTML = "";
+
+ sales.forEach(s=>{
+  l.innerHTML += `<li class="list-group-item">${s.date} - $${s.total}</li>`;
+ });
 }
 
-// CORTE
+// ===== CORTE =====
 function renderCorte(){
- let today=new Date().toLocaleDateString();
- let totalDia=0, ventasDia=0;
+ let today = new Date().toLocaleDateString();
+ let totalDia = 0;
+ let ventasDia = 0;
 
  sales.forEach(s=>{
   if(s.date.includes(today)){
-    totalDia+=+s.total;
-    ventasDia++;
+   totalDia += +s.total;
+   ventasDia++;
   }
  });
 
- corteData.innerHTML=`Ventas: ${ventasDia}<br>Total: $${totalDia}`;
+ corteData.innerHTML = `
+  Ventas: ${ventasDia}<br>
+  Total: $${totalDia}
+ `;
 }
 
-// BARCODE
+// ===== BARCODE =====
 function scanBarcode(e){
  if(e.key==="Enter"){
-  let i=products.findIndex(p=>p.code===barcode.value);
-  if(i>=0)addToCart(i);
+  let i = products.findIndex(p=>p.code===barcode.value);
+  if(i>=0) addToCart(i);
   barcode.value="";
  }
 }
 
-// TICKET
+// ===== TICKET =====
 function printTicket(){
- let w=window.open("","","width=300");
+ let w = window.open("", "", "width=300");
  w.document.write("<h3>TIENDA</h3><hr>");
  cart.forEach(p=>w.document.write(`<p>${p.name} $${p.price}</p>`));
  w.document.write("<hr>Total: $"+total.innerText);
  w.print();
 }
 
-// SYNC REAL
+// ===== SYNC =====
 function syncData(){
- if(!navigator.onLine)return alert("Sin internet");
+ if(!navigator.onLine) return alert("Sin internet");
 
  fetch("https://TU-SERVIDOR/api.php",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({products,sales})
  })
- .then(r=>r.json())
  .then(()=>alert("Sincronizado"))
  .catch(()=>alert("Error servidor"));
 }
 
-// LOAD
-function loadData(){
- let tx=db.transaction(["products","sales"],"readonly");
- tx.objectStore("products").getAll().onsuccess=e=>{products=e.target.result||[];renderProducts();renderTable();};
- tx.objectStore("sales").getAll().onsuccess=e=>sales=e.target.result||[];
-}
+// INIT
+renderProducts();
+renderTable();
 </script>
 
 </body>
