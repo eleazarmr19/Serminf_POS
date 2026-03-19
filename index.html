@@ -1,100 +1,104 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serminf POS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serminf POS</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Estilos personalizados -->
-    <style>
-        body {
-            background: linear-gradient(135deg, #0d6efd, #6610f2);
-            color: white;
-        }
-        .hero {
-            height: 90vh;
-            display: flex;
-            align-items: center;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: scale(1.05);
-        }
-        footer {
-            background: rgba(0,0,0,0.2);
-            padding: 20px;
-            text-align: center;
-        }
-    </style>
+<style>
+body { background:#0f172a; color:#e2e8f0; }
+.sidebar { width:220px; height:100vh; position:fixed; background:#020617; padding:20px; }
+.sidebar h4 { color:#38bdf8; }
+.sidebar button { width:100%; margin:5px 0; }
+.main { margin-left:240px; padding:20px; }
+.card { background:#020617; border:none; border-radius:12px; }
+.product { cursor:pointer; transition:0.2s; }
+.product:hover { transform:scale(1.03); }
+.total-box { font-size:1.5rem; }
+</style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="#">Serminf POS</a>
-    </div>
-</nav>
+<div class="sidebar">
+    <h4>Serminf POS</h4>
+    <button class="btn btn-outline-light">Ventas</button>
+    <button class="btn btn-outline-light">Productos</button>
+    <button class="btn btn-outline-light">Reportes</button>
+</div>
 
-<!-- HERO -->
-<section class="hero text-center">
-    <div class="container">
-        <h1 class="display-3 fw-bold">Bienvenido a Serminf POS</h1>
-        <p class="lead">Sistema de punto de venta moderno y eficiente</p>
-        <a href="#" class="btn btn-light btn-lg mt-3">Comenzar</a>
-    </div>
-</section>
-
-<!-- CARDS -->
-<section class="container my-5">
-    <div class="row g-4">
-
-        <div class="col-md-4">
-            <div class="card p-4 text-dark">
-                <h3>Ventas</h3>
-                <p>Controla todas tus ventas de manera rápida y sencilla.</p>
-            </div>
+<div class="main">
+    <div class="row">
+        <div class="col-md-8">
+            <h3>Productos</h3>
+            <div class="row" id="products"></div>
         </div>
 
         <div class="col-md-4">
-            <div class="card p-4 text-dark">
-                <h3>Inventario</h3>
-                <p>Administra tus productos y stock en tiempo real.</p>
+            <div class="card p-3">
+                <h4>Ticket</h4>
+                <ul id="cart" class="list-group mb-3"></ul>
+                <div class="total-box">Total: $<span id="total">0</span></div>
+                <button class="btn btn-success w-100 mt-3" onclick="checkout()">Cobrar</button>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card p-4 text-dark">
-                <h3>Reportes</h3>
-                <p>Visualiza estadísticas y toma mejores decisiones.</p>
-            </div>
-        </div>
-
     </div>
-</section>
+</div>
 
-<!-- PHP dinámico simple -->
-<section class="container text-center my-5">
-    <?php
-        date_default_timezone_set("America/Mexico_City");
-        echo "<h4>Hoy es: " . date("d/m/Y H:i:s") . "</h4>";
-    ?>
-</section>
+<script>
+const products = [
+    {name:"Coca Cola", price:20},
+    {name:"Sabritas", price:18},
+    {name:"Agua", price:12},
+    {name:"Galletas", price:15}
+];
 
-<!-- FOOTER -->
-<footer>
-    <p>© <?php echo date("Y"); ?> Serminf POS - Todos los derechos reservados</p>
-</footer>
+let cart = [];
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+function renderProducts() {
+    let container = document.getElementById("products");
+    container.innerHTML = "";
+
+    products.forEach((p, i) => {
+        container.innerHTML += `
+        <div class="col-md-4">
+            <div class="card p-3 product" onclick="addToCart(${i})">
+                <h5>${p.name}</h5>
+                <p>$${p.price}</p>
+            </div>
+        </div>`;
+    });
+}
+
+function addToCart(index) {
+    cart.push(products[index]);
+    renderCart();
+}
+
+function renderCart() {
+    let list = document.getElementById("cart");
+    list.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item, i) => {
+        total += item.price;
+        list.innerHTML += `<li class="list-group-item d-flex justify-content-between">
+            ${item.name}
+            <span>$${item.price}</span>
+        </li>`;
+    });
+
+    document.getElementById("total").innerText = total;
+}
+
+function checkout() {
+    alert("Venta realizada: $" + document.getElementById("total").innerText);
+    cart = [];
+    renderCart();
+}
+
+renderProducts();
+</script>
 
 </body>
 </html>
