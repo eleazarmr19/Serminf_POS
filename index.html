@@ -5,146 +5,266 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Serminf POS</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
 <style>
-:root{--bg:#f4f6f9;--sidebar:#111827;--card:#fff;--primary:#2563eb;--text:#111827;}
-body{background:var(--bg);color:var(--text);} 
-.sidebar{width:230px;height:100vh;position:fixed;background:var(--sidebar);padding:20px;color:#fff;}
-.main{margin-left:250px;padding:25px;}
-.card{background:var(--card);border:none;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.05);} 
-.product{cursor:pointer;transition:.2s;border:1px solid #eee;}
-.product:hover{transform:translateY(-3px);border-color:var(--primary);} 
+body{background:#f4f6f9;}
+.sidebar{width:220px;height:100vh;position:fixed;background:#111827;color:#fff;padding:15px;}
+.main{margin-left:240px;padding:20px;}
+.card{border-radius:10px;}
+.product{cursor:pointer;transition:.2s;}
+.product:hover{transform:scale(1.03);}
 </style>
 </head>
+
 <body>
 
 <div class="sidebar">
-  <h4>Serminf POS</h4>
-  <button class="btn btn-outline-light w-100 mb-2" onclick="showView('ventas')">Ventas</button>
-  <button class="btn btn-outline-light w-100 mb-2" onclick="showView('productos')">Productos</button>
-  <button class="btn btn-outline-light w-100 mb-2" onclick="showView('historial')">Historial</button>
-  <button class="btn btn-warning w-100 mt-3" onclick="backupData()">Respaldar</button>
-  <button class="btn btn-info w-100 mt-2" onclick="syncData()">Sincronizar</button>
+<h4>Serminf POS</h4>
+<button class="btn btn-outline-light w-100 mb-2" onclick="showView('ventas')">Ventas</button>
+<button class="btn btn-outline-light w-100 mb-2" onclick="showView('productos')">Productos</button>
+<button class="btn btn-outline-light w-100 mb-2" onclick="showView('historial')">Historial</button>
 </div>
 
 <div class="main">
 
-<div id="loginView">
-  <div class="card p-4" style="max-width:400px;margin:auto;">
-    <h5>Login</h5>
-    <input id="user" class="form-control mb-2" placeholder="Usuario">
-    <input id="pass" type="password" class="form-control mb-2" placeholder="Contraseña">
-    <button class="btn btn-primary w-100" onclick="login()">Entrar</button>
-  </div>
+<!-- VENTAS -->
+<div id="ventasView">
+<input id="search" class="form-control mb-2" placeholder="Buscar..." onkeyup="renderProducts()">
+<input id="barcode" class="form-control mb-3" placeholder="Escanear código..." onkeyup="scanBarcode(event)">
+
+<div class="row">
+<div class="col-md-8">
+<div class="row" id="products"></div>
 </div>
 
-<div id="ventasView" style="display:none;">
-  <input id="search" class="form-control mb-3" placeholder="Buscar producto..." onkeyup="renderProducts()">
-  <div class="row">
-    <div class="col-md-8"><div class="row" id="products"></div></div>
-    <div class="col-md-4">
-      <div class="card p-3">
-        <h5>Ticket</h5>
-        <ul id="cart" class="list-group mb-3"></ul>
-        <div>Total: $<span id="total">0</span></div>
-        <button class="btn btn-success w-100 mt-2" onclick="printTicket()">Imprimir</button>
-        <button class="btn btn-primary w-100 mt-2" onclick="checkout()">Cobrar</button>
-      </div>
-    </div>
-  </div>
+<div class="col-md-4">
+<div class="card p-3">
+<h5>Ticket</h5>
+<ul id="cart" class="list-group mb-2"></ul>
+<h4>Total: $<span id="total">0</span></h4>
+<button class="btn btn-success w-100 mt-2" onclick="printTicket()">Imprimir</button>
+<button class="btn btn-primary w-100 mt-2" onclick="checkout()">Cobrar</button>
+</div>
+</div>
+</div>
 </div>
 
+<!-- PRODUCTOS -->
 <div id="productosView" style="display:none;">
-  <div class="d-flex justify-content-between mb-3">
-    <h5>Productos</h5>
-    <button class="btn btn-success" onclick="openModal()">+ Agregar</button>
-  </div>
-  <table class="table table-striped">
-    <thead><tr><th>Nombre</th><th>Precio</th><th>Acciones</th></tr></thead>
-    <tbody id="productTable"></tbody>
-  </table>
+<div class="d-flex justify-content-between mb-3">
+<h5>Productos</h5>
+<button class="btn btn-success" onclick="openModal()">+ Agregar</button>
 </div>
 
+<table class="table">
+<thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Código</th><th></th></tr></thead>
+<tbody id="productTable"></tbody>
+</table>
+</div>
+
+<!-- HISTORIAL -->
 <div id="historialView" style="display:none;">
-  <h5>Historial de Ventas</h5>
-  <ul id="salesList" class="list-group"></ul>
+<h5>Ventas</h5>
+<ul id="salesList" class="list-group"></ul>
 </div>
 
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
-  <div class="modal-dialog"><div class="modal-content">
-    <div class="modal-body">
-      <input type="hidden" id="editIndex">
-      <input id="name" class="form-control mb-2" placeholder="Nombre">
-      <input id="price" type="number" class="form-control" placeholder="Precio">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-    </div>
-  </div></div>
+<div class="modal-dialog">
+<div class="modal-content p-3">
+<input type="hidden" id="editIndex">
+<input id="name" class="form-control mb-2" placeholder="Nombre">
+<input id="category" class="form-control mb-2" placeholder="Categoría">
+<input id="price" type="number" class="form-control mb-2" placeholder="Precio">
+<input id="code" class="form-control mb-2" placeholder="Código de barras">
+<button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+<button class="btn btn-secondary mt-2" onclick="closeModal()">Cancelar</button>
+</div>
+</div>
 </div>
 
 <script>
-let db;
-let products=[];
-let sales=[];
-let cart=[];
+let db, products=[], sales=[], cart=[];
 
 // ===== IndexedDB =====
-let request = indexedDB.open("posDB",1);
-request.onupgradeneeded=e=>{
-  db=e.target.result;
-  db.createObjectStore("products",{keyPath:"id",autoIncrement:true});
-  db.createObjectStore("sales",{keyPath:"id",autoIncrement:true});
+let req = indexedDB.open("posDB",1);
+req.onupgradeneeded=e=>{
+ db=e.target.result;
+ db.createObjectStore("products",{keyPath:"id",autoIncrement:true});
+ db.createObjectStore("sales",{keyPath:"id",autoIncrement:true});
 };
-request.onsuccess=e=>{db=e.target.result;loadData();};
+req.onsuccess=e=>{db=e.target.result;loadData();};
 
 function save(store,data){
-  let tx=db.transaction(store,"readwrite");
-  let s=tx.objectStore(store);
-  s.clear();
-  data.forEach(d=>s.add(d));
+ let tx=db.transaction(store,"readwrite");
+ let s=tx.objectStore(store);
+ s.clear();
+ data.forEach(d=>s.add(d));
 }
 
-function loadData(){
-  let tx=db.transaction(["products","sales"],"readonly");
-  tx.objectStore("products").getAll().onsuccess=e=>{products=e.target.result;renderProducts();renderTable();};
-  tx.objectStore("sales").getAll().onsuccess=e=>{sales=e.target.result;};
+// ===== VISTAS =====
+function showView(v){
+ ventasView.style.display="none";
+ productosView.style.display="none";
+ historialView.style.display="none";
+ document.getElementById(v+"View").style.display="block";
+ if(v==="historial")renderSales();
 }
-
-// ===== LOGIN =====
-function login(){if(user.value==='admin'&&pass.value==='1234'){loginView.style.display='none';showView('ventas');}else alert('Error');}
-
-function showView(v){['ventas','productos','historial'].forEach(x=>document.getElementById(x+'View').style.display='none');document.getElementById(v+'View').style.display='block';if(v==='historial')renderSales();}
 
 // ===== PRODUCTOS =====
-function renderProducts(){let c=products.filter(p=>p.name.toLowerCase().includes(search.value.toLowerCase()));productsDiv.innerHTML='';c.forEach((p,i)=>{productsDiv.innerHTML+=`<div class='col-md-4'><div class='card p-2 product' onclick='addToCart(${i})'>${p.name}<br>$${p.price}</div></div>`});}
-function renderTable(){productTable.innerHTML='';products.forEach((p,i)=>{productTable.innerHTML+=`<tr><td>${p.name}</td><td>${p.price}</td><td><button onclick='editProduct(${i})'>✏️</button><button onclick='deleteProduct(${i})'>❌</button></td></tr>`});}
-function saveProduct(){let i=editIndex.value;if(i==='')products.push({name:name.value,price:+price.value});else products[i]={name:name.value,price:+price.value};save("products",products);closeModal();renderProducts();renderTable();}
-function deleteProduct(i){products.splice(i,1);save("products",products);renderProducts();renderTable();}
-function editProduct(i){openModal();name.value=products[i].name;price.value=products[i].price;editIndex.value=i;}
+function renderProducts(){
+ let s=document.getElementById("search").value.toLowerCase();
+ let cont=document.getElementById("products");
+ cont.innerHTML="";
+ products.filter(p=>p.name.toLowerCase().includes(s)).forEach((p,i)=>{
+  cont.innerHTML+=`
+  <div class="col-md-4 mb-2">
+   <div class="card p-2 product" onclick="addToCart(${i})">
+    <b>${p.name}</b><br>
+    <small>${p.category}</small><br>
+    $${p.price}
+   </div>
+  </div>`;
+ });
+}
+
+function renderTable(){
+ let t=document.getElementById("productTable");
+ t.innerHTML="";
+ products.forEach((p,i)=>{
+  t.innerHTML+=`
+  <tr>
+  <td>${p.name}</td>
+  <td>${p.category}</td>
+  <td>$${p.price}</td>
+  <td>${p.code}</td>
+  <td>
+   <button onclick="editProduct(${i})">✏️</button>
+   <button onclick="deleteProduct(${i})">❌</button>
+  </td>
+  </tr>`;
+ });
+}
+
+function saveProduct(){
+ let i=document.getElementById("editIndex").value;
+ let obj={
+  name:name.value,
+  category:category.value,
+  price:+price.value,
+  code:code.value
+ };
+
+ if(i==="")products.push(obj);
+ else products[i]=obj;
+
+ save("products",products);
+ closeModal();
+ renderProducts();
+ renderTable();
+}
+
+function deleteProduct(i){
+ products.splice(i,1);
+ save("products",products);
+ renderProducts();
+ renderTable();
+}
+
+function editProduct(i){
+ openModal();
+ name.value=products[i].name;
+ category.value=products[i].category;
+ price.value=products[i].price;
+ code.value=products[i].code;
+ editIndex.value=i;
+}
+
+// ===== MODAL =====
+function openModal(){modal.style.display="block";}
+function closeModal(){modal.style.display="none";clearForm();}
+function clearForm(){name.value="";category.value="";price.value="";code.value="";editIndex.value="";}
 
 // ===== CARRITO =====
 function addToCart(i){cart.push(products[i]);renderCart();}
 function removeFromCart(i){cart.splice(i,1);renderCart();}
-function renderCart(){cartList.innerHTML='';let t=0;cart.forEach((p,i)=>{t+=p.price;cartList.innerHTML+=`<li>${p.name} $${p.price}<button onclick='removeFromCart(${i})'>❌</button></li>`});total.innerText=t;}
 
-// ===== VENTAS =====
-function checkout(){if(!cart.length)return alert('Vacío');let sale={date:new Date().toLocaleString(),items:cart,total:total.innerText};sales.push(sale);save("sales",sales);cart=[];renderCart();alert('Guardado');}
-function renderSales(){salesList.innerHTML='';sales.forEach(s=>salesList.innerHTML+=`<li>${s.date} - $${s.total}</li>`)}
+function renderCart(){
+ let l=document.getElementById("cart");
+ l.innerHTML="";
+ let t=0;
 
-// ===== BACKUP =====
-function backupData(){let data={products,sales};let blob=new Blob([JSON.stringify(data)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup_pos.json';a.click();}
+ cart.forEach((p,i)=>{
+  t+=p.price;
+  l.innerHTML+=`
+  <li class="list-group-item d-flex justify-content-between">
+   ${p.name} $${p.price}
+   <button class="btn btn-sm btn-danger" onclick="removeFromCart(${i})">X</button>
+  </li>`;
+ });
 
-// ===== SYNC (SIMULADO) =====
-function syncData(){
-  if(!navigator.onLine){alert('Sin internet');return;}
-  console.log('Enviando datos...', {products,sales});
-  alert('Sincronización simulada (aquí iría tu API PHP)');
+ total.innerText=t;
 }
 
+// ===== CODIGO DE BARRAS =====
+function scanBarcode(e){
+ if(e.key==="Enter"){
+  let val=barcode.value;
+  let i=products.findIndex(p=>p.code===val);
+  if(i>=0)addToCart(i);
+  barcode.value="";
+ }
+}
+
+// ===== VENTAS =====
+function checkout(){
+ if(!cart.length)return alert("Vacío");
+
+ let total=document.getElementById("total").innerText;
+
+ sales.push({
+  date:new Date().toLocaleString(),
+  items:[...cart],
+  total
+ });
+
+ save("sales",sales);
+ cart=[];
+ renderCart();
+ alert("Venta guardada");
+}
+
+// ===== HISTORIAL =====
+function renderSales(){
+ let l=document.getElementById("salesList");
+ l.innerHTML="";
+ sales.forEach(s=>{
+  l.innerHTML+=`<li class="list-group-item">${s.date} - $${s.total}</li>`;
+ });
+}
+
+// ===== TICKET =====
+function printTicket(){
+ let w=window.open("","_blank","width=300");
+ w.document.write("<h3>TIENDA</h3><hr>");
+ cart.forEach(p=>w.document.write(`<p>${p.name} $${p.price}</p>`));
+ w.document.write("<hr><h4>Total: $"+total.innerText+"</h4>");
+ w.print();
+}
+
+// ===== LOAD =====
+function loadData(){
+ let tx=db.transaction(["products","sales"],"readonly");
+ tx.objectStore("products").getAll().onsuccess=e=>{
+  products=e.target.result;
+  renderProducts();
+  renderTable();
+ };
+ tx.objectStore("sales").getAll().onsuccess=e=>sales=e.target.result;
+}
 </script>
+
 </body>
 </html>
-
