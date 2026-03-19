@@ -22,11 +22,12 @@ body{background:var(--bg);color:var(--text);}
   <button class="btn btn-outline-light w-100 mb-2" onclick="showView('ventas')">Ventas</button>
   <button class="btn btn-outline-light w-100 mb-2" onclick="showView('productos')">Productos</button>
   <button class="btn btn-outline-light w-100 mb-2" onclick="showView('historial')">Historial</button>
+  <button class="btn btn-warning w-100 mt-3" onclick="backupData()">Respaldar</button>
+  <button class="btn btn-info w-100 mt-2" onclick="syncData()">Sincronizar</button>
 </div>
 
 <div class="main">
 
-<!-- LOGIN -->
 <div id="loginView">
   <div class="card p-4" style="max-width:400px;margin:auto;">
     <h5>Login</h5>
@@ -36,9 +37,8 @@ body{background:var(--bg);color:var(--text);}
   </div>
 </div>
 
-<!-- VENTAS -->
 <div id="ventasView" style="display:none;">
-  <input type="text" id="search" class="form-control mb-3" placeholder="Buscar producto..." onkeyup="renderProducts()">
+  <input id="search" class="form-control mb-3" placeholder="Buscar producto..." onkeyup="renderProducts()">
   <div class="row">
     <div class="col-md-8"><div class="row" id="products"></div></div>
     <div class="col-md-4">
@@ -53,7 +53,6 @@ body{background:var(--bg);color:var(--text);}
   </div>
 </div>
 
-<!-- PRODUCTOS -->
 <div id="productosView" style="display:none;">
   <div class="d-flex justify-content-between mb-3">
     <h5>Productos</h5>
@@ -65,7 +64,6 @@ body{background:var(--bg);color:var(--text);}
   </table>
 </div>
 
-<!-- HISTORIAL -->
 <div id="historialView" style="display:none;">
   <h5>Historial de Ventas</h5>
   <ul id="salesList" class="list-group"></ul>
@@ -73,10 +71,8 @@ body{background:var(--bg);color:var(--text);}
 
 </div>
 
-<!-- MODAL -->
-<div class="modal" tabindex="-1" id="modal">
+<div class="modal" id="modal">
   <div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header"><h5>Producto</h5></div>
     <div class="modal-body">
       <input type="hidden" id="editIndex">
       <input id="name" class="form-control mb-2" placeholder="Nombre">
@@ -90,103 +86,65 @@ body{background:var(--bg);color:var(--text);}
 </div>
 
 <script>
-let products=[{name:"Coca Cola",price:20},{name:"Sabritas",price:18}];
-let cart=[];let sales=[];
+let db;
+let products=[];
+let sales=[];
+let cart=[];
 
-function login(){
-  let u=document.getElementById('user').value;
-  let p=document.getElementById('pass').value;
-  if(u==='admin' && p==='1234'){
-    document.getElementById('loginView').style.display='none';
-    showView('ventas');
-  } else alert('Datos incorrectos');
+// ===== IndexedDB =====
+let request = indexedDB.open("posDB",1);
+request.onupgradeneeded=e=>{
+  db=e.target.result;
+  db.createObjectStore("products",{keyPath:"id",autoIncrement:true});
+  db.createObjectStore("sales",{keyPath:"id",autoIncrement:true});
+};
+request.onsuccess=e=>{db=e.target.result;loadData();};
+
+function save(store,data){
+  let tx=db.transaction(store,"readwrite");
+  let s=tx.objectStore(store);
+  s.clear();
+  data.forEach(d=>s.add(d));
 }
-
-function showView(v){
-  ['ventas','productos','historial'].forEach(x=>document.getElementById(x+'View').style.display='none');
-  document.getElementById(v+'View').style.display='block';
-  if(v==='productos')renderTable();
-  if(v==='historial')renderSales();
-}
-
-function renderProducts(){
-  let s=document.getElementById('search').value.toLowerCase();
-  let c=document.getElementById('products');c.innerHTML='';
-  products.filter(p=>p.name.toLowerCase().includes(s)).forEach((p,i)=>{
-    c.innerHTML+=`<div class='col-md-4 mb-3'><div class='card p-3 product' onclick='addToCart(${i})'><h6>${p.name}</h6><small>$${p.price}</small></div></div>`;
-  });
-}
-
-function addToCart(i){cart.push(products[i]);renderCart();}
-
-function removeFromCart(i){cart.splice(i,1);renderCart();}
-
-function renderCart(){
-  let l=document.getElementById('cart');l.innerHTML='';let t=0;
-  cart.forEach((p,i)=>{t+=p.price;l.innerHTML+=`<li class='list-group-item d-flex justify-content-between'>${p.name}<span>$${p.price}</span><button class='btn btn-sm btn-danger' onclick='removeFromCart(${i})'>X</button></li>`});
-  document.getElementById('total').innerText=t;
-}
-
-function checkout(){
-  if(cart.length===0)return alert('No hay productos');
-  let total=document.getElementById('total').innerText;
-  sales.push({date:new Date().toLocaleString(),items:[...cart],total});
-  localStorage.setItem('sales',JSON.stringify(sales));
-  cart=[];renderCart();alert('Venta guardada');
-}
-
-function printTicket(){
-  let win=window.open('','','width=300');
-  win.document.write('<h3>Ticket</h3>');
-  cart.forEach(p=>win.document.write(`<p>${p.name} - $${p.price}</p>`));
-  win.document.write('<hr>Total: $'+document.getElementById('total').innerText);
-  win.print();
-}
-
-function renderSales(){
-  let l=document.getElementById('salesList');l.innerHTML='';
-  sales.forEach(s=>{
-    l.innerHTML+=`<li class='list-group-item'>${s.date} - $${s.total}</li>`;
-  });
-}
-
-function renderTable(){
-  let t=document.getElementById('productTable');t.innerHTML='';
-  products.forEach((p,i)=>{
-    t.innerHTML+=`<tr><td>${p.name}</td><td>$${p.price}</td><td>
-    <button class='btn btn-sm btn-warning' onclick='editProduct(${i})'>Editar</button>
-    <button class='btn btn-sm btn-danger' onclick='deleteProduct(${i})'>Eliminar</button>
-    </td></tr>`;
-  });
-}
-
-function openModal(){document.getElementById('modal').style.display='block';}
-function closeModal(){document.getElementById('modal').style.display='none';clearForm();}
-
-function saveProduct(){
-  let name=document.getElementById('name').value;
-  let price=parseFloat(document.getElementById('price').value);
-  let i=document.getElementById('editIndex').value;
-  if(i==='') products.push({name,price}); else products[i]={name,price};
-  localStorage.setItem('products',JSON.stringify(products));
-  closeModal();renderTable();renderProducts();
-}
-
-function editProduct(i){openModal();document.getElementById('name').value=products[i].name;document.getElementById('price').value=products[i].price;document.getElementById('editIndex').value=i;}
-
-function deleteProduct(i){if(confirm('Eliminar producto?')){products.splice(i,1);localStorage.setItem('products',JSON.stringify(products));renderTable();renderProducts();}}
-
-function clearForm(){document.getElementById('name').value='';document.getElementById('price').value='';document.getElementById('editIndex').value='';}
 
 function loadData(){
-  let p=JSON.parse(localStorage.getItem('products'));
-  let s=JSON.parse(localStorage.getItem('sales'));
-  if(p) products=p;
-  if(s) sales=s;
+  let tx=db.transaction(["products","sales"],"readonly");
+  tx.objectStore("products").getAll().onsuccess=e=>{products=e.target.result;renderProducts();renderTable();};
+  tx.objectStore("sales").getAll().onsuccess=e=>{sales=e.target.result;};
 }
 
-loadData();renderProducts();renderTable();
-</script>
+// ===== LOGIN =====
+function login(){if(user.value==='admin'&&pass.value==='1234'){loginView.style.display='none';showView('ventas');}else alert('Error');}
 
+function showView(v){['ventas','productos','historial'].forEach(x=>document.getElementById(x+'View').style.display='none');document.getElementById(v+'View').style.display='block';if(v==='historial')renderSales();}
+
+// ===== PRODUCTOS =====
+function renderProducts(){let c=products.filter(p=>p.name.toLowerCase().includes(search.value.toLowerCase()));productsDiv.innerHTML='';c.forEach((p,i)=>{productsDiv.innerHTML+=`<div class='col-md-4'><div class='card p-2 product' onclick='addToCart(${i})'>${p.name}<br>$${p.price}</div></div>`});}
+function renderTable(){productTable.innerHTML='';products.forEach((p,i)=>{productTable.innerHTML+=`<tr><td>${p.name}</td><td>${p.price}</td><td><button onclick='editProduct(${i})'>✏️</button><button onclick='deleteProduct(${i})'>❌</button></td></tr>`});}
+function saveProduct(){let i=editIndex.value;if(i==='')products.push({name:name.value,price:+price.value});else products[i]={name:name.value,price:+price.value};save("products",products);closeModal();renderProducts();renderTable();}
+function deleteProduct(i){products.splice(i,1);save("products",products);renderProducts();renderTable();}
+function editProduct(i){openModal();name.value=products[i].name;price.value=products[i].price;editIndex.value=i;}
+
+// ===== CARRITO =====
+function addToCart(i){cart.push(products[i]);renderCart();}
+function removeFromCart(i){cart.splice(i,1);renderCart();}
+function renderCart(){cartList.innerHTML='';let t=0;cart.forEach((p,i)=>{t+=p.price;cartList.innerHTML+=`<li>${p.name} $${p.price}<button onclick='removeFromCart(${i})'>❌</button></li>`});total.innerText=t;}
+
+// ===== VENTAS =====
+function checkout(){if(!cart.length)return alert('Vacío');let sale={date:new Date().toLocaleString(),items:cart,total:total.innerText};sales.push(sale);save("sales",sales);cart=[];renderCart();alert('Guardado');}
+function renderSales(){salesList.innerHTML='';sales.forEach(s=>salesList.innerHTML+=`<li>${s.date} - $${s.total}</li>`)}
+
+// ===== BACKUP =====
+function backupData(){let data={products,sales};let blob=new Blob([JSON.stringify(data)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup_pos.json';a.click();}
+
+// ===== SYNC (SIMULADO) =====
+function syncData(){
+  if(!navigator.onLine){alert('Sin internet');return;}
+  console.log('Enviando datos...', {products,sales});
+  alert('Sincronización simulada (aquí iría tu API PHP)');
+}
+
+</script>
 </body>
 </html>
+
