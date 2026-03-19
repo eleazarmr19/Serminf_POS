@@ -146,6 +146,59 @@ function checkout(){
 }
 
 renderProducts();
+// ====== LOCAL STORAGE (OFFLINE) ======
+function saveData(){
+  localStorage.setItem("pos_products", JSON.stringify(products));
+  localStorage.setItem("pos_sales", JSON.stringify(sales));
+}
+
+function loadData(){
+  let p = JSON.parse(localStorage.getItem("pos_products"));
+  let s = JSON.parse(localStorage.getItem("pos_sales"));
+  if(p) products.splice(0, products.length, ...p);
+  if(s) sales = s;
+}
+
+// ====== VENTAS ======
+let sales = [];
+
+function checkout(){
+  if(cart.length===0){
+    alert("No hay productos");
+    return;
+  }
+
+  let total = parseFloat(document.getElementById("total").innerText);
+
+  let sale = {
+    date: new Date().toLocaleString(),
+    items: [...cart],
+    total: total
+  };
+
+  sales.push(sale);
+  saveData();
+
+  alert("Venta guardada: $"+total);
+  cart=[];
+  renderCart();
+}
+
+// ====== PRODUCTOS CRUD ======
+function addProduct(){
+  let name = prompt("Nombre del producto:");
+  let price = parseFloat(prompt("Precio:"));
+
+  if(name && price){
+    products.push({name, price});
+    saveData();
+    renderProducts();
+  }
+}
+
+// ====== INICIALIZAR ======
+loadData();
+renderProducts();
 </script>
 
 </body>
