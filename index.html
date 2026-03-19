@@ -7,94 +7,142 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-body { background:#0f172a; color:#e2e8f0; }
-.sidebar { width:220px; height:100vh; position:fixed; background:#020617; padding:20px; }
-.sidebar h4 { color:#38bdf8; }
-.sidebar button { width:100%; margin:5px 0; }
-.main { margin-left:240px; padding:20px; }
-.card { background:#020617; border:none; border-radius:12px; }
-.product { cursor:pointer; transition:0.2s; }
-.product:hover { transform:scale(1.03); }
-.total-box { font-size:1.5rem; }
+:root{
+  --bg:#f4f6f9;
+  --sidebar:#111827;
+  --card:#ffffff;
+  --primary:#2563eb;
+  --text:#111827;
+  --muted:#6b7280;
+}
+body{background:var(--bg); color:var(--text);} 
+.sidebar{width:230px;height:100vh;position:fixed;background:var(--sidebar);padding:20px;color:#fff;}
+.sidebar h4{font-weight:600;margin-bottom:20px;}
+.sidebar button{width:100%;margin:6px 0;}
+.main{margin-left:250px;padding:25px;}
+.card{background:var(--card);border:none;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.05);} 
+.product{cursor:pointer;transition:.2s;border:1px solid #eee;}
+.product:hover{transform:translateY(-3px);border-color:var(--primary);} 
+.total-box{font-size:1.4rem;font-weight:600;}
+input{border-radius:8px !important;}
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h4>Serminf POS</h4>
-    <button class="btn btn-outline-light">Ventas</button>
-    <button class="btn btn-outline-light">Productos</button>
-    <button class="btn btn-outline-light">Reportes</button>
+  <h4>Serminf POS</h4>
+  <button class="btn btn-outline-light">Ventas</button>
+  <button class="btn btn-outline-light">Productos</button>
+  <button class="btn btn-outline-light">Reportes</button>
 </div>
 
 <div class="main">
-    <div class="row">
-        <div class="col-md-8">
-            <h3>Productos</h3>
-            <div class="row" id="products"></div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h4>Ticket</h4>
-                <ul id="cart" class="list-group mb-3"></ul>
-                <div class="total-box">Total: $<span id="total">0</span></div>
-                <button class="btn btn-success w-100 mt-3" onclick="checkout()">Cobrar</button>
-            </div>
-        </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <input type="text" id="search" class="form-control" placeholder="Buscar producto..." onkeyup="renderProducts()">
     </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <h5 class="mb-3">Productos</h5>
+      <div class="row" id="products"></div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h5>Ticket</h5>
+        <ul id="cart" class="list-group mb-3"></ul>
+        <div class="d-flex justify-content-between">
+          <span>Subtotal:</span>
+          <span>$<span id="subtotal">0</span></span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Total:</span>
+          <span>$<span id="total">0</span></span>
+        </div>
+        <button class="btn btn-primary w-100 mt-3" onclick="checkout()">Cobrar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 const products = [
-    {name:"Coca Cola", price:20},
-    {name:"Sabritas", price:18},
-    {name:"Agua", price:12},
-    {name:"Galletas", price:15}
+  {name:"Coca Cola", price:20},
+  {name:"Sabritas", price:18},
+  {name:"Agua", price:12},
+  {name:"Galletas", price:15}
 ];
 
 let cart = [];
 
-function renderProducts() {
-    let container = document.getElementById("products");
-    container.innerHTML = "";
+function renderProducts(){
+  let container = document.getElementById("products");
+  let search = document.getElementById("search").value.toLowerCase();
+  container.innerHTML = "";
 
-    products.forEach((p, i) => {
-        container.innerHTML += `
-        <div class="col-md-4">
-            <div class="card p-3 product" onclick="addToCart(${i})">
-                <h5>${p.name}</h5>
-                <p>$${p.price}</p>
-            </div>
-        </div>`;
-    });
+  products.filter(p=>p.name.toLowerCase().includes(search)).forEach((p,i)=>{
+    container.innerHTML += `
+    <div class="col-md-4 mb-3">
+      <div class="card p-3 product" onclick="addToCart(${i})">
+        <h6>${p.name}</h6>
+        <small class="text-muted">$${p.price}</small>
+      </div>
+    </div>`;
+  });
 }
 
-function addToCart(index) {
-    cart.push(products[index]);
-    renderCart();
+function addToCart(index){
+  let item = products[index];
+  let found = cart.find(p=>p.name===item.name);
+  if(found){
+    found.qty++;
+  } else {
+    cart.push({...item, qty:1});
+  }
+  renderCart();
 }
 
-function renderCart() {
-    let list = document.getElementById("cart");
-    list.innerHTML = "";
-    let total = 0;
+function renderCart(){
+  let list = document.getElementById("cart");
+  list.innerHTML = "";
+  let subtotal=0;
 
-    cart.forEach((item, i) => {
-        total += item.price;
-        list.innerHTML += `<li class="list-group-item d-flex justify-content-between">
-            ${item.name}
-            <span>$${item.price}</span>
-        </li>`;
-    });
+  cart.forEach((item,i)=>{
+    let totalItem = item.price * item.qty;
+    subtotal += totalItem;
 
-    document.getElementById("total").innerText = total;
+    list.innerHTML += `
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>${item.name}</strong><br>
+        <small>$${item.price} x ${item.qty}</small>
+      </div>
+      <div>
+        <span>$${totalItem}</span><br>
+        <button class="btn btn-sm btn-danger" onclick="removeItem(${i})">X</button>
+      </div>
+    </li>`;
+  });
+
+  document.getElementById("subtotal").innerText = subtotal;
+  document.getElementById("total").innerText = subtotal;
 }
 
-function checkout() {
-    alert("Venta realizada: $" + document.getElementById("total").innerText);
-    cart = [];
-    renderCart();
+function removeItem(index){
+  cart.splice(index,1);
+  renderCart();
+}
+
+function checkout(){
+  if(cart.length===0){
+    alert("No hay productos");
+    return;
+  }
+  alert("Venta realizada: $"+document.getElementById("total").innerText);
+  cart=[];
+  renderCart();
 }
 
 renderProducts();
