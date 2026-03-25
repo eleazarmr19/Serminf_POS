@@ -55,16 +55,18 @@
         </div>
 
         <div class="d-grid">
-            <button class="btn btn-custom">Calcular Suma</button>
+            <button class="btn btn-custom" onclick="sumar();">Calcular Suma</button>
         </div>
     </div>
 
 </body>
     <script>
-       let a,b;
-        a="Hola";
-        b= "Eleazar";
-        let c=10;
-        alert(a + " " + b + " Bienvenido, " + " Tienes " + c + " años");
+        function sumar(){
+       let a,b,c;
+        a=parseFloat(document.getElementById("num1"));
+         b=parseFloat(document.getElementById("num2"));
+        c=a+b;
+        document.getElementById("resultado").value=c;
+        }
     </script>
 </html>
