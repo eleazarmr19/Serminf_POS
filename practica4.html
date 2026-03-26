@@ -65,9 +65,19 @@
         </div>
 
         <div class="d-grid">
-            <button class="btn btn-custom">Calcular Promedio</button>
+            <button class="btn btn-custom" onclick="calcularpromedio ()">Calcular Promedio</button>
         </div>
     </div>
 
 </body>
+    <script>
+        function calcularpromedio () {
+         let cal1 = parseFloat(document.getElementById("cal1").value);
+         let cal2 = parseFloat(document.getElementById("cal2").value);
+         let cal3 = parseFloat(document.getElementById("cal3").value);
+         let cal4 = parseFloat(document.getElementById("cal4").value);         
+         let promedio = (cal1 + cal2 + cal3 + cal4)/4;
+         document.getElementById("promedio").value = promedio;
+        }
+    </script>
 </html>
