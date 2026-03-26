@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Suma de Números</title>
+    <title>Promedio de Calificaciones</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap -->
@@ -14,7 +14,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background: linear-gradient(135deg, #1d4350, #a43931);
         }
 
         .card {
@@ -24,47 +24,50 @@
         }
 
         .btn-custom {
-            background-color: #2a5298;
+            background-color: #a43931;
             color: white;
             font-weight: bold;
         }
 
         .btn-custom:hover {
-            background-color: #1e3c72;
+            background-color: #7a2d28;
         }
     </style>
 </head>
 <body>
 
     <div class="card col-md-4">
-        <h3 class="text-center mb-4">Suma de Números</h3>
+        <h3 class="text-center mb-4">Promedio de Calificaciones</h3>
 
         <div class="mb-3">
-            <label class="form-label">Número 1</label>
-            <input type="text" class="form-control" id="num1">
+            <label class="form-label">Calificación 1</label>
+            <input type="number" class="form-control" id="cal1">
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Número 2</label>
-            <input type="text" class="form-control" id="num2">
+            <label class="form-label">Calificación 2</label>
+            <input type="number" class="form-control" id="cal2">
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Resultado</label>
-            <input type="text" class="form-control" id="resultado" readonly>
+            <label class="form-label">Calificación 3</label>
+            <input type="number" class="form-control" id="cal3">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Calificación 4</label>
+            <input type="number" class="form-control" id="cal4">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Promedio</label>
+            <input type="text" class="form-control" id="promedio" readonly>
         </div>
 
         <div class="d-grid">
-            <button class="btn btn-custom" onclick="sumar()">Calcular Suma</button>
+            <button class="btn btn-custom">Calcular Promedio</button>
         </div>
     </div>
-    <script> 
-    function sumar(){
-  let num1 = parseFloat(document.getElementById("num1").value);
-  let num2 = parseFloat(document.getElementById("num2").value);
-  let suma = num1 + num2;
-  document.getElementById("resultado").value = suma;
-    }
-    </script>
+
 </body>
 </html>
