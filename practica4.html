@@ -55,9 +55,16 @@
         </div>
 
         <div class="d-grid">
-            <button class="btn btn-custom">Calcular Suma</button>
+            <button class="btn btn-custom onclick="sumar()">Calcular Suma</button>
         </div>
-    </div>
+            <script> 
+    function sumar(){
+  let num1 = parseFloat(document.getElementById("num1").value);
+  let num2 = parseFloat(document.getElementById("num2").value);
+  let suma = num1 + num2;
+  document.getElementById("resultado").value = suma;
+    }
+    </script>
 
 </body>
 </html>
