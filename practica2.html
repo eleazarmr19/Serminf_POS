@@ -70,17 +70,14 @@
     </div>
     <script>
  document.querySelector('.btn-custom').addEventListener('click', function() {
-           let cal1=
-        Number(document.getElementById("cal1").value) || 0;
-         let cal2 =
-       Number(document.getElementById("cal2").value) || 0;
-        let cal3 =
-       Number(document.getElementById("cal3").value) || 0;
-        let cal4 =
-       Number(document.getElementById("cal4").value) || 0;
-      let promedio = (cal1 + cal2 + cal3 +cal4)/ 4;
+let cal1 = Number(document.getElementById('cal1').value) || 0;
+let cal2 = Number(document.getElementById('cal2').value) || 0;
+let cal3 = Number(document.getElementById('cal3').value) || 0;
+let cal4 = Number(document.getElementById('cal4').value) || 0;
+let promedio = (cal1 + cal2 + cal3 + cal4) / 4;
      document.getElementById('promedio').value = promedio.toFixed(2);
  });
+       
         
     </script>         
      
